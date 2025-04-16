@@ -61,9 +61,18 @@ body {
   font-family: 'Crimson Text', serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #2c2c2c;
-  color: #2c2c2c;
+  background-color:var(--bg-color);
+  color: var(--text-color);
   overflow-x: hidden;
+}
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+}
+
+.dark {
+  --bg-color: #1e293b;
+  --text-color: #ffffff;
 }
 
 ::-webkit-scrollbar {
@@ -134,8 +143,8 @@ body {
 }
 
 .glass-effect {
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   background: rgba(234, 228, 211, 0.7);
 }
 

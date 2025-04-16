@@ -9,16 +9,26 @@ interface TemplateSelectorProps {
 }
 
 const TemplateSelector = ({ onSelect, content }: TemplateSelectorProps) => {
-  const templates = useTemplateStore(state => state.templates);
-  const analyzeContent = useTemplateStore(state => state.analyzeContent);
+  const templates = useTemplateStore((state) => state.templates);
+  const analyzeContent = useTemplateStore((state) => state.analyzeContent);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [analysis, setAnalysis] = useState<SmartCategorization | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (content) {
-      const result = analyzeContent(content);
-      setAnalysis(result);
-      setShowAnalysis(true);
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await analyzeContent(content); // Assuming analyzeContent is async
+        setAnalysis(result);
+        setShowAnalysis(true);
+      } catch (err) {
+        setError('Failed to analyze content. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -39,31 +49,40 @@ const TemplateSelector = ({ onSelect, content }: TemplateSelectorProps) => {
 
   return (
     <div className="space-y-4">
+      {/* Templates */}
       <div className="grid grid-cols-2 gap-4">
-        {templates.map(template => (
-          <button
-            key={template.id}
-            onClick={() => onSelect(template)}
-            className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {getIcon(template.category)}
-            <div className="text-left">
-              <div className="font-medium">{template.name}</div>
-              <div className="text-sm text-gray-500">{template.description}</div>
-            </div>
-          </button>
-        ))}
+        {templates.length > 0 ? (
+          templates.map((template) => (
+            <button
+              key={template.id}
+              onClick={() => onSelect(template)}
+              className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {getIcon(template.category)}
+              <div className="text-left">
+                <div className="font-medium">{template.name}</div>
+                <div className="text-sm text-gray-500">{template.description}</div>
+              </div>
+            </button>
+          ))
+        ) : (
+          <p className="text-gray-500">No templates available.</p>
+        )}
       </div>
 
+      {/* Content Analysis */}
       {content && (
         <div className="mt-4">
           <button
             onClick={handleAnalyze}
             className="text-sm text-blue-600 hover:text-blue-800"
+            disabled={isLoading}
           >
-            Analyze Content
+            {isLoading ? 'Analyzing...' : 'Analyze Content'}
           </button>
-          
+
+          {error && <p className="text-red-500 mt-2">{error}</p>}
+
           {showAnalysis && analysis && (
             <div className="mt-2 p-4 border rounded-lg bg-gray-50">
               <h3 className="font-medium mb-2">Content Analysis</h3>
@@ -90,6 +109,15 @@ const TemplateSelector = ({ onSelect, content }: TemplateSelectorProps) => {
                   <span className="text-xl">{analysis.suggestedEmoji}</span>
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  setAnalysis(null);
+                  setShowAnalysis(false);
+                }}
+                className="text-sm text-gray-600 hover:text-gray-800 mt-2"
+              >
+                Clear Analysis
+              </button>
             </div>
           )}
         </div>
@@ -98,4 +126,4 @@ const TemplateSelector = ({ onSelect, content }: TemplateSelectorProps) => {
   );
 };
 
-export default TemplateSelector; 
+export default TemplateSelector;

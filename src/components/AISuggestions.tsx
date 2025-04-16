@@ -29,6 +29,24 @@ export const AISuggestions = ({ note, onApplySuggestion }: AISuggestionsProps) =
     }
   };
 
+  const handleApplyTag = (tag: string) => {
+    const updatedTags = [...new Set([...(note.tags || []), tag])];
+    onApplySuggestion({ tags: updatedTags });
+  };
+
+  const SuggestionSection = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
+    <div>
+      <h3 className="font-semibold">{title}</h3>
+      {children}
+    </div>
+  );
+
   if (!suggestions) {
     return (
       <div className="ai-suggestions">
@@ -42,53 +60,45 @@ export const AISuggestions = ({ note, onApplySuggestion }: AISuggestionsProps) =
   return (
     <div className="ai-suggestions space-y-4">
       {suggestions.title && (
-        <div>
-          <h3 className="font-semibold">Suggested Title</h3>
+        <SuggestionSection title="Suggested Title">
           <p>{suggestions.title}</p>
           <Button onClick={() => onApplySuggestion({ title: suggestions.title })}>
             Apply Title
           </Button>
-        </div>
+        </SuggestionSection>
       )}
 
-      {suggestions.tags && suggestions.tags.length > 0 && (
-        <div>
-          <h3 className="font-semibold">Suggested Tags</h3>
+      {suggestions.tags?.length > 0 && (
+        <SuggestionSection title="Suggested Tags">
           <div className="flex flex-wrap gap-2">
             {suggestions.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 bg-gray-100 rounded"
-                onClick={() =>
-                  onApplySuggestion({
-                    tags: [...new Set([...(note.tags || []), tag])],
-                  })
-                }
+                onClick={() => handleApplyTag(tag)}
+                className="cursor-pointer px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
               >
                 {tag}
               </span>
             ))}
           </div>
-        </div>
+        </SuggestionSection>
       )}
 
       {suggestions.summary && (
-        <div>
-          <h3 className="font-semibold">Summary</h3>
+        <SuggestionSection title="Summary">
           <p>{suggestions.summary}</p>
-        </div>
+        </SuggestionSection>
       )}
 
-      {suggestions.improvements && suggestions.improvements.length > 0 && (
-        <div>
-          <h3 className="font-semibold">Suggested Improvements</h3>
+      {suggestions.improvements?.length > 0 && (
+        <SuggestionSection title="Suggested Improvements">
           <ul className="list-disc list-inside">
-            {suggestions.improvements.map((improvement, index) => (
-              <li key={index}>{improvement}</li>
+            {suggestions.improvements.map((item, index) => (
+              <li key={index}>{item}</li>
             ))}
           </ul>
-        </div>
+        </SuggestionSection>
       )}
     </div>
   );
-}; 
+};

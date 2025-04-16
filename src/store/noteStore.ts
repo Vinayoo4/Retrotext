@@ -1,143 +1,148 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { Note, NoteVersion, NoteStore } from '../types';
+import { Note, NoteVersion } from '../types';
 import { useDBStore } from './dbStore';
 
-type ActivityType = 'create' | 'edit' | 'delete' | 'version';
+// Types
 
-interface ActivityLogEntry {
+export type ActivityType = 'create' | 'edit' | 'delete' | 'version';
+
+export interface ActivityLogEntry {
   type: ActivityType;
   noteId: string;
   versionId?: string;
   timestamp: Date;
 }
 
-interface StoreAnalytics {
-  totalNotes: number;
-  lastUpdated: Date;
-  activityLog: ActivityLogEntry[];
+export interface NoteStore {
+  analytics: {
+    totalNotes: number;
+    lastUpdated: Date | null;
+    activityLog: ActivityLogEntry[];
+    notes: Note[];
+  };
 }
 
 interface StoreState extends NoteStore {
-  analytics: StoreAnalytics;
+  notes: Note[];
+  activityLog: ActivityLogEntry[];
+
+  addNote: (note: Partial<Note>) => void;
+  updateNote: (id: string, updates: Partial<Note>) => void;
+  deleteNote: (id: string) => void;
+  togglePin: (id: string) => void;
+  addTag: (id: string, tag: string) => void;
+  removeTag: (id: string, tag: string) => void;
+  searchNotes: (query: string) => Note[];
+  addVersion: (noteId: string, content: string, changes: string) => void;
+  getVersion: (noteId: string, versionId: string) => NoteVersion | undefined;
+  restoreVersion: (noteId: string, versionId: string) => void;
+  fetchAnalytics: () => void;
 }
 
-const DEBOUNCE_DELAY = 1000; // 1 second
+const now = () => new Date();
+const logActivity = (type: ActivityType, noteId: string, versionId?: string): ActivityLogEntry => ({
+  type,
+  noteId,
+  versionId,
+  timestamp: now(),
+});
 
-const useNoteStore = create<StoreState>((set, get) => ({
+export const useNoteStore = create<StoreState>((set, get) => ({
   notes: [],
+  activityLog: [],
   analytics: {
     totalNotes: 0,
-    lastUpdated: new Date(),
+    lastUpdated: null,
     activityLog: [],
+    notes: [],
   },
 
   addNote: (note) => {
     const newNote: Note = {
       ...note,
       id: uuidv4(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now(),
+      updatedAt: now(),
       isPinned: false,
       tags: [],
       versions: [],
-    };
+    } as Note;
 
     set((state) => {
-      const newState = {
-        notes: [...state.notes, newNote],
+      const updatedNotes = [...state.notes, newNote];
+      const updatedLog = [...state.analytics.activityLog, logActivity('create', newNote.id)];
+      useDBStore.getState().saveNotes(updatedNotes);
+      return {
+        notes: updatedNotes,
         analytics: {
           ...state.analytics,
           totalNotes: state.analytics.totalNotes + 1,
-          lastUpdated: new Date(),
-          activityLog: [
-            ...state.analytics.activityLog,
-            {
-              type: 'create' as ActivityType,
-              noteId: newNote.id,
-              timestamp: new Date(),
-            },
-          ],
+          lastUpdated: now(),
+          activityLog: updatedLog,
+          notes: updatedNotes,
         },
       };
-      useDBStore.getState().saveNotes(newState.notes);
-      return newState;
     });
   },
 
   updateNote: (id, updates) => {
     set((state) => {
-      const noteIndex = state.notes.findIndex((note) => note.id === id);
-      if (noteIndex === -1) return state;
+      const index = state.notes.findIndex((n) => n.id === id);
+      if (index === -1) return state;
 
-      const updatedNote = {
-        ...state.notes[noteIndex],
+      const originalNote = state.notes[index];
+      const updatedNote: Note = {
+        ...originalNote,
         ...updates,
-        updatedAt: new Date(),
+        updatedAt: now(),
       };
 
-      // Create a new version if content changed
-      if (updates.content && updates.content !== state.notes[noteIndex].content) {
+      const activityLog = [...state.analytics.activityLog];
+
+      if (updates.content && updates.content !== originalNote.content) {
         const version: NoteVersion = {
           id: uuidv4(),
-          content: state.notes[noteIndex].content,
-          timestamp: new Date(),
+          content: originalNote.content,
+          timestamp: now(),
           changes: 'Content updated',
         };
-
-        updatedNote.versions = [...(updatedNote.versions || []), version];
-
-        state.analytics.activityLog.push({
-          type: 'version' as ActivityType,
-          noteId: id,
-          versionId: version.id,
-          timestamp: new Date(),
-        });
+        updatedNote.versions = [...(originalNote.versions || []), version];
+        activityLog.push(logActivity('version', id, version.id));
       }
 
-      const newNotes = [...state.notes];
-      newNotes[noteIndex] = updatedNote;
+      const updatedNotes = [...state.notes];
+      updatedNotes[index] = updatedNote;
+      activityLog.push(logActivity('edit', id));
 
-      const newState = {
-        notes: newNotes,
+      useDBStore.getState().saveNotes(updatedNotes);
+      return {
+        notes: updatedNotes,
         analytics: {
           ...state.analytics,
-          lastUpdated: new Date(),
-          activityLog: [
-            ...state.analytics.activityLog,
-            {
-              type: 'edit' as ActivityType,
-              noteId: id,
-              timestamp: new Date(),
-            },
-          ],
+          lastUpdated: now(),
+          activityLog,
+          notes: updatedNotes,
         },
       };
-      useDBStore.getState().saveNotes(newState.notes);
-      return newState;
     });
   },
 
   deleteNote: (id) => {
     set((state) => {
-      const newState = {
-        notes: state.notes.filter((note) => note.id !== id),
+      const filteredNotes = state.notes.filter((note) => note.id !== id);
+      const updatedLog = [...state.analytics.activityLog, logActivity('delete', id)];
+      useDBStore.getState().saveNotes(filteredNotes);
+      return {
+        notes: filteredNotes,
         analytics: {
           ...state.analytics,
           totalNotes: state.analytics.totalNotes - 1,
-          lastUpdated: new Date(),
-          activityLog: [
-            ...state.analytics.activityLog,
-            {
-              type: 'delete' as ActivityType,
-              noteId: id,
-              timestamp: new Date(),
-            },
-          ],
+          lastUpdated: now(),
+          activityLog: updatedLog,
+          notes: filteredNotes,
         },
       };
-      useDBStore.getState().saveNotes(newState.notes);
-      return newState;
     });
   },
 
@@ -146,85 +151,59 @@ const useNoteStore = create<StoreState>((set, get) => ({
       const updatedNotes = state.notes.map((note) =>
         note.id === id ? { ...note, isPinned: !note.isPinned } : note
       );
-
-      const newState = {
+      const updatedLog = [...state.analytics.activityLog, logActivity('edit', id)];
+      useDBStore.getState().saveNotes(updatedNotes);
+      return {
         notes: updatedNotes,
         analytics: {
           ...state.analytics,
-          lastUpdated: new Date(),
-          activityLog: [
-            ...state.analytics.activityLog,
-            {
-              type: 'edit' as ActivityType,
-              noteId: id,
-              timestamp: new Date(),
-            },
-          ],
+          lastUpdated: now(),
+          activityLog: updatedLog,
+          notes: updatedNotes,
         },
       };
-      useDBStore.getState().saveNotes(newState.notes);
-      return newState;
     });
   },
 
   addTag: (id, tag) => {
     set((state) => {
       const updatedNotes = state.notes.map((note) =>
-        note.id === id
-          ? { ...note, tags: [...new Set([...(note.tags || []), tag])] }
-          : note
+        note.id === id ? { ...note, tags: [...new Set([...(note.tags || []), tag])] } : note
       );
-
-      const newState = {
+      const updatedLog = [...state.analytics.activityLog, logActivity('edit', id)];
+      useDBStore.getState().saveNotes(updatedNotes);
+      return {
         notes: updatedNotes,
         analytics: {
           ...state.analytics,
-          lastUpdated: new Date(),
-          activityLog: [
-            ...state.analytics.activityLog,
-            {
-              type: 'edit' as ActivityType,
-              noteId: id,
-              timestamp: new Date(),
-            },
-          ],
+          lastUpdated: now(),
+          activityLog: updatedLog,
+          notes: updatedNotes,
         },
       };
-      useDBStore.getState().saveNotes(newState.notes);
-      return newState;
     });
   },
 
   removeTag: (id, tag) => {
     set((state) => {
       const updatedNotes = state.notes.map((note) =>
-        note.id === id
-          ? { ...note, tags: (note.tags || []).filter((t) => t !== tag) }
-          : note
+        note.id === id ? { ...note, tags: (note.tags || []).filter((t) => t !== tag) } : note
       );
-
-      const newState = {
+      const updatedLog = [...state.analytics.activityLog, logActivity('edit', id)];
+      useDBStore.getState().saveNotes(updatedNotes);
+      return {
         notes: updatedNotes,
         analytics: {
           ...state.analytics,
-          lastUpdated: new Date(),
-          activityLog: [
-            ...state.analytics.activityLog,
-            {
-              type: 'edit' as ActivityType,
-              noteId: id,
-              timestamp: new Date(),
-            },
-          ],
+          lastUpdated: now(),
+          activityLog: updatedLog,
+          notes: updatedNotes,
         },
       };
-      useDBStore.getState().saveNotes(newState.notes);
-      return newState;
     });
   },
 
   searchNotes: (query) => {
-    if (!query) return get().notes;
     const searchTerm = query.toLowerCase();
     return get().notes.filter(
       (note) =>
@@ -236,41 +215,34 @@ const useNoteStore = create<StoreState>((set, get) => ({
 
   addVersion: (noteId, content, changes) => {
     set((state) => {
-      const noteIndex = state.notes.findIndex((note) => note.id === noteId);
-      if (noteIndex === -1) return state;
+      const index = state.notes.findIndex((note) => note.id === noteId);
+      if (index === -1) return state;
 
       const version: NoteVersion = {
         id: uuidv4(),
         content,
-        timestamp: new Date(),
+        timestamp: now(),
         changes,
       };
 
       const updatedNote = {
-        ...state.notes[noteIndex],
-        versions: [...(state.notes[noteIndex].versions || []), version],
+        ...state.notes[index],
+        versions: [...(state.notes[index].versions || []), version],
       };
 
-      const newNotes = [...state.notes];
-      newNotes[noteIndex] = updatedNote;
+      const updatedNotes = [...state.notes];
+      updatedNotes[index] = updatedNote;
 
-      const newState = {
-        notes: newNotes,
+      const updatedLog = [...state.analytics.activityLog, logActivity('version', noteId, version.id)];
+      useDBStore.getState().saveNotes(updatedNotes);
+      return {
+        notes: updatedNotes,
         analytics: {
           ...state.analytics,
-          activityLog: [
-            ...state.analytics.activityLog,
-            {
-              type: 'version' as ActivityType,
-              noteId,
-              versionId: version.id,
-              timestamp: new Date(),
-            },
-          ],
+          activityLog: updatedLog,
+          notes: updatedNotes,
         },
       };
-      useDBStore.getState().saveNotes(newState.notes);
-      return newState;
     });
   },
 
@@ -281,18 +253,35 @@ const useNoteStore = create<StoreState>((set, get) => ({
 
   restoreVersion: (noteId, versionId) => {
     const version = get().getVersion(noteId, versionId);
-    if (!version) return;
+    if (version) get().updateNote(noteId, { content: version.content });
+  },
 
-    get().updateNote(noteId, { content: version.content });
+  fetchAnalytics: () => {
+    const notes = get().notes;
+    const activityLog = get().activityLog;
+    const lastUpdated = notes.reduce((latest, note) =>
+      note.updatedAt > latest ? note.updatedAt : latest, new Date(0));
+
+    set({
+      analytics: {
+        totalNotes: notes.length,
+        lastUpdated,
+        activityLog,
+        notes,
+      },
+    });
   },
 }));
 
 // Load notes from localStorage on initialization
-const loadInitialNotes = () => {
-  const notes = useDBStore.getState().loadNotes();
+const loadInitialNotes = async () => {
+  const loadedNotes = await useDBStore.getState().loadNotes();
+  const notes = loadedNotes ? loadedNotes : [];
   useNoteStore.setState({ notes });
 };
 
-loadInitialNotes();
+loadInitialNotes().catch((error) => {
+  console.error('Failed to load initial notes:', error);
+});
 
 export default useNoteStore;
