@@ -16,7 +16,9 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit }) => {
 
   return (
     <motion.div
-      className={`note-paper rounded-lg p-6 hover-lift ${note.isPinned ? 'border-2 border-amber-600' : ''}`}
+      className={`bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 hover-lift ${
+        note.isPinned ? 'border-2 border-indigo-500 shadow-lg shadow-indigo-500/20' : ''
+      }`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -30,9 +32,11 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit }) => {
             whileHover={{ rotate: 15 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            <BookOpen className="w-5 h-5 text-amber-800 opacity-70" />
+            <BookOpen className="w-5 h-5 text-indigo-400" />
           </motion.div>
-          <h3 className="text-xl font-serif ink-text text-shadow-elegant">{note.title}</h3>
+          <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+            {note.title}
+          </h3>
         </div>
         <div className="flex gap-2">
           <motion.button
@@ -40,17 +44,17 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit }) => {
             whileTap={{ scale: 0.95 }}
             onClick={() => togglePin(note.id)}
             className={`p-2 rounded-full transition-colors button-press
-              ${note.isPinned ? 'bg-amber-800/20' : 'hover:bg-amber-800/10'}`}
+              ${note.isPinned ? 'bg-indigo-500/20' : 'hover:bg-slate-700/50'}`}
           >
-            <Pin className={`w-4 h-4 ${note.isPinned ? 'text-amber-800' : 'text-amber-600'}`} />
+            <Pin className={`w-4 h-4 ${note.isPinned ? 'text-indigo-400' : 'text-indigo-400/50'}`} />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1, rotate: 15 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onEdit(note)}
-            className="p-2 hover:bg-amber-800/10 rounded-full transition-colors button-press"
+            className="p-2 hover:bg-slate-700/50 rounded-full transition-colors button-press"
           >
-            <Edit2 className="w-4 h-4 text-amber-800" />
+            <Edit2 className="w-4 h-4 text-indigo-400" />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1, rotate: -15 }}
@@ -58,12 +62,12 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit }) => {
             onClick={() => deleteNote(note.id)}
             className="p-2 hover:bg-red-500/10 rounded-full transition-colors button-press"
           >
-            <Trash2 className="w-4 h-4 text-red-700" />
+            <Trash2 className="w-4 h-4 text-red-400" />
           </motion.button>
         </div>
       </div>
       <motion.div 
-        className="prose prose-amber max-w-none mb-4 font-serif leading-relaxed"
+        className="prose prose-invert max-w-none mb-4 leading-relaxed"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -75,26 +79,26 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit }) => {
           {note.tags.map((tag) => (
             <div
               key={tag}
-              className="flex items-center gap-1 px-2 py-1 bg-amber-800/10 rounded-full text-sm font-serif"
+              className="flex items-center gap-1 px-2 py-1 bg-slate-700/50 rounded-full text-sm"
             >
-              <Tag className="w-3 h-3 text-amber-800" />
-              <span>{tag}</span>
+              <Tag className="w-3 h-3 text-indigo-400" />
+              <span className="text-indigo-200">{tag}</span>
               <button
                 onClick={() => removeTag(note.id, tag)}
-                className="hover:bg-amber-800/20 rounded-full p-1"
+                className="hover:bg-slate-600/50 rounded-full p-1"
               >
-                <X className="w-3 h-3 text-amber-800" />
+                <X className="w-3 h-3 text-indigo-400" />
               </button>
             </div>
           ))}
         </div>
       )}
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <span className="font-serif italic">
+      <div className="flex justify-between items-center text-sm">
+        <span className="text-indigo-200/70">
           {format(new Date(note.updatedAt), 'MMMM dd, yyyy')}
         </span>
         <motion.span 
-          className="px-3 py-1 bg-amber-800/10 rounded-full font-serif"
+          className="px-3 py-1 bg-slate-700/50 rounded-full text-indigo-200"
           whileHover={{ scale: 1.05 }}
         >
           {note.theme}
