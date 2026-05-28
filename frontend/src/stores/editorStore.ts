@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import type { Theme } from '../../../shared/types';
+import { api } from '../services/api';
 
 export const useEditorStore = defineStore('editor', () => {
   const content = ref('');
@@ -30,6 +31,15 @@ export const useEditorStore = defineStore('editor', () => {
     URL.revokeObjectURL(url);
   };
 
+  const saveToCloud = async () => {
+    try {
+      await api.saveSession("Cloud Save", content.value, currentThemeId.value);
+      alert("Saved to cloud successfully!");
+    } catch (err) {
+      alert("Failed to save to cloud. Are you logged in?");
+    }
+  };
+
   const importSession = async (file: File) => {
     return new Promise((resolve, reject) => {
         const r = new FileReader();
@@ -45,5 +55,5 @@ export const useEditorStore = defineStore('editor', () => {
     });
   };
 
-  return { content, currentThemeId, themes, setThemes, getTheme, exportSession, importSession };
+  return { content, currentThemeId, themes, setThemes, getTheme, exportSession, importSession, saveToCloud };
 });

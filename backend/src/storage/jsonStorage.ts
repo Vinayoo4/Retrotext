@@ -1,7 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const DATA_DIR = path.resolve(__dirname, '../../../data');
+// Fix DATA_DIR resolution to account for running out of `dist`
+// If we are in `dist/...`, we need to go up to find `data/` at root level.
+const DATA_DIR = path.resolve(__dirname, process.env.NODE_ENV === 'production' ? '../../../data' : '../../../../data');
 
 export async function readJsonFile<T>(relativePath: string): Promise<T[]> {
   const filePath = path.join(DATA_DIR, relativePath);

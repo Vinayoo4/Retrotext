@@ -5,5 +5,19 @@
     "passwordHash": "$2b$10$Vvrli59kd5f92dQy5/.8MuCyH0a0GX6TxJc0VXUfNvBHIh3Pu7OOe",
     "createdAt": "2026-05-27T15:47:24.730Z",
     "updatedAt": "2026-05-27T15:47:24.730Z"
+  },
+  {
+    "id": "dc994769-6ca2-4c59-96f9-0eeb17e11032",
+    "username": "testuser2",
+    "passwordHash": "$2b$10$VShj6bORJT52op/6RzTZsOxQRhs.2yB7.6wddRg2baKAHAri/Kg0O",
+    "createdAt": "2026-05-28T08:41:26.457Z",
+    "updatedAt": "2026-05-28T08:41:26.457Z"
+  },
+  {
+    "id": "937682f2-dc33-4738-b63c-594e1056f1cc",
+    "username": "testuser3",
+    "passwordHash": "$2b$10$4PBHeOswlqnuVExFwpsp9.ZSMhMSmM5LSD.KiTJbnGtDlKa37aAdK",
+    "createdAt": "2026-05-28T08:45:01.650Z",
+    "updatedAt": "2026-05-28T08:45:01.650Z"
   }
 ]

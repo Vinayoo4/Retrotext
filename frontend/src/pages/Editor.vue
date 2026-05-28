@@ -11,6 +11,7 @@
           Import <input type="file" accept=".json" class="hidden" @change="handleImport">
         </label>
       </div>
+      <button @click="editorStore.saveToCloud" class="px-4 py-2 rounded font-bold ml-4" :style="{ backgroundColor: '#4CAF50', color: '#fff' }">Save to Cloud</button>
     </header>
     <main class="flex-grow p-8 flex justify-center">
       <div class="w-full max-w-5xl rounded-xl shadow-2xl flex flex-col" :style="{ backgroundColor: theme?.colors.secondary }">
@@ -23,6 +24,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useEditorStore } from '../stores/editorStore';
+import { logger } from '../../../shared/utils/logger';
 import { api } from '../services/api';
 
 const editorStore = useEditorStore();
@@ -38,6 +40,7 @@ onMounted(async () => {
     try {
         const themes = await api.getThemes();
         if(themes) editorStore.setThemes(themes);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        logger.error('Failed to fetch themes', e); }
 });
 </script>

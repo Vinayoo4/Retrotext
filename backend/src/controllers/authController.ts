@@ -3,8 +3,10 @@ import { readJsonFile, writeJsonFile } from '../storage/jsonStorage';
 import { hashPassword, comparePassword } from '../auth/auth';
 import { User } from '../../../shared/types';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 const USERS_FILE = 'users/users.json';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-mvp';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -33,7 +35,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     users.push(newUser);
     await writeJsonFile(USERS_FILE, users);
 
-    res.status(201).json({ id: newUser.id, username: newUser.username });
+    const token = jwt.sign({ id: newUser.id, username: newUser.username }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.status(201).json({ id: newUser.id, username: newUser.username, token });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -60,7 +64,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.status(200).json({ id: user.id, username: user.username });
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.status(200).json({ id: user.id, username: user.username, token });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

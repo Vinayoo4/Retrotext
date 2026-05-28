@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/authRoutes';
 import sessionRoutes from './routes/sessionRoutes';
+import { logger } from './logger';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,5 +23,6 @@ app.get('/api/themes', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+
+  logger.info(`Backend server running on port ${PORT}`);
 });
