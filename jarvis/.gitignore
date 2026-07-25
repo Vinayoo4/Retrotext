@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Database / Storage
+data/db/*.sqlite
+data/db/*.index
+data/db/*.json
+
+# macOS
+.DS_Store
