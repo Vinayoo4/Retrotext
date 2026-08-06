@@ -1,1 +1,13 @@
-{"compilerOptions":{"target":"es2022","module":"commonjs","esModuleInterop":true,"strict":true,"skipLibCheck":true,"forceConsistentCasingInFileNames":true,"types":["node"]}}
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
+    "outDir": "dist", "rootDir": ".."
+  },
+  "include": ["src/**/*", "../shared/**/*"]
+}
